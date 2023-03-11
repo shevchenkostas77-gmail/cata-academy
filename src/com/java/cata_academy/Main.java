@@ -21,39 +21,66 @@ public class Main {
 
     public static String calc(String input) {
         String[] array = Check.checkFormat(input);
+
         String firstNumString = array[0];
         String operation = array[1];
-        String secondNumString = array[array.length - 1];
-        int a, b;
-        if (Check.checkNumberSystem(firstNumString) & Check.checkNumberSystem(secondNumString)) {
-            a = Convert.convertRomanToArabic(firstNumString);
-            b = Convert.convertRomanToArabic(secondNumString);
-            int result = arithmeticOperation(a, b, operation);
+        String secondNumString = array[2];
+
+        int firstNum, secondNum;
+        if (Check.checkNumberSystem(firstNumString) && Check.checkNumberSystem(secondNumString)) {
+            firstNum = Convert.convertRomanToArabic(firstNumString);
+            secondNum = Convert.convertRomanToArabic(secondNumString);
+            int result = arithmeticOperation(firstNum, secondNum, operation);
             return Convert.convertArabicToRoman(result);
         } else {
             try {
-                a = Convert.convertStringToNumber(firstNumString);
-                b = Convert.convertStringToNumber(secondNumString);
+                firstNum = Convert.convertStringToNumber(firstNumString);
+                secondNum = Convert.convertStringToNumber(secondNumString);
             } catch (NumberFormatException e) {
                 throw new NumberFormatException("Используются одновременно разные системы счисления");
             }
-            Check.checkRange(a, b);
-            return Integer.toString(arithmeticOperation(a, b, operation));
+            Check.checkRangeArabic(firstNum, secondNum);
+            return Integer.toString(arithmeticOperation(firstNum, secondNum, operation));
         }
     }
 
     private static class Check {
         static String[] checkFormat(String input) {
-            String[] array = input.trim().split(" ");
-            int length = array.length;
-            if (length != 3) {
+            String[] arrayResult = new String[3];
+            String[] arraySource;
+            String[] operations = {"+", "-", "*", "/"};
+
+            for (String operation : operations) {
+                if (input.contains(operation)) {
+                    arrayResult[1] = operation; // математическая операция
+                    break;
+                }
+            }
+            if (arrayResult[1] == null) {
+                throw new IllegalArgumentException("Не правильно введено математическое выражение");
+            }
+
+            arraySource = input.replaceAll("\\s", "").split("[+\\-/*]");
+            arrayResult[0] = arraySource[0]; // первый операнд
+            arrayResult[2] = arraySource[1]; // второй операнд
+
+            if (arraySource.length != 2) {
                 throw new IllegalArgumentException("Неверный формат математического выражения");
             }
-            return array;
+
+            if (!(checkNumberSystem(arrayResult[0]) || checkStringIsNumeric(arrayResult[0]))) {
+                throw new NumberFormatException("Неверно введено первое число");
+            }
+            if (!(checkNumberSystem(arrayResult[2]) || checkStringIsNumeric(arrayResult[2]))) {
+                throw new NumberFormatException("Неверно введено второе число");
+            }
+
+            return arrayResult;
         }
 
-        static void checkRange(int a, int b) {
-            if (a <= 0 || a >= 11 || b <= 0 || b >= 11) {
+
+        static void checkRangeArabic(int num1, int num2) {
+            if (num1 <= 0 || num1 >= 11 || num2 <= 0 || num2 >= 11) {
                 throw new IllegalArgumentException("Диапазон введенных чисел должен быть "
                         + "от 1 до 10 в арабском формате");
             }
@@ -62,7 +89,21 @@ public class Main {
         static boolean checkNumberSystem(String num) {
             return Arrays.asList(Convert.romanNum).contains(num);
         }
+
+        static boolean checkStringIsNumeric(String input) {
+            if (input.equals("")) {
+                return false;
+            }
+            for (int i = 0; i < input.length(); i++) {
+                if (!Character.isDigit(input.charAt(i))) {
+                    if (input.charAt(i) == '.') continue;
+                    return false;
+                }
+            }
+            return true;
+        }
     }
+
 
     private static class Convert {
         static String[] romanNum = {"O", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII",
@@ -104,10 +145,12 @@ public class Main {
         private static int convertStringToNumber(String input) {
             return Math.round(Float.parseFloat(input));
         }
-    }
 
+    }
     public static void main(String[] args) {
         String inputConsole = inputLine();
         System.out.println(calc(inputConsole));
+
+
     }
 }
